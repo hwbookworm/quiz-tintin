@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Les Sept Boules de Cristal</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #f5f4f0; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 500; margin-bottom: 0.25rem; }
+  .subtitle { font-size: 14px; color: #666; margin-bottom: 2rem; }
+  .progress-bar-bg { background: #e0ddd6; border-radius: 99px; height: 6px; margin-bottom: 1.5rem; }
+  .progress-bar-fill { background: #2563eb; height: 6px; border-radius: 99px; transition: width 0.4s ease; }
+  .score-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .score-badge { font-size: 13px; color: #666; }
+  .question-card { background: #fff; border: 0.5px solid #ddd; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 99px; margin-bottom: 8px; }
+  .tag-vocab { background: #dbeafe; color: #1d4ed8; }
+  .tag-compre { background: #fef3c7; color: #92400e; }
+  .q-text { font-size: 15px; font-weight: 500; margin-bottom: 1rem; line-height: 1.5; }
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .opt-btn { background: #f5f4f0; border: 0.5px solid #ddd; border-radius: 8px; padding: 10px 14px; font-size: 14px; color: #1a1a1a; cursor: pointer; text-align: left; transition: background 0.15s, border-color 0.15s; line-height: 1.4; font-family: inherit; }
+  .opt-btn:hover:not(:disabled) { background: #ebe9e3; border-color: #bbb; }
+  .opt-btn.correct { background: #dcfce7; border-color: #86efac; color: #166534; }
+  .opt-btn.wrong { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+  .feedback { font-size: 13px; margin-top: 10px; padding: 8px 12px; border-radius: 8px; line-height: 1.5; }
+  .feedback.ok { background: #dcfce7; color: #166534; }
+  .feedback.ko { background: #fee2e2; color: #991b1b; }
+  .nav-row { display: flex; justify-content: flex-end; margin-top: 1rem; }
+  .nav-btn { background: #fff; border: 0.5px solid #bbb; border-radius: 8px; padding: 8px 20px; font-size: 14px; cursor: pointer; color: #1a1a1a; font-family: inherit; }
+  .nav-btn:hover:not(:disabled) { background: #f5f4f0; }
+  .nav-btn:disabled { opacity: 0.4; cursor: default; }
+  .results-card { background: #fff; border: 0.5px solid #ddd; border-radius: 12px; padding: 2rem; text-align: center; }
+  .results-score { font-size: 56px; font-weight: 500; margin: 1rem 0 0.25rem; }
+  .results-label { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+  .results-msg { font-size: 15px; line-height: 1.6; margin-bottom: 1.5rem; max-width: 400px; margin-left: auto; margin-right: auto; }
+  .retry-btn { background: #fff; border: 0.5px solid #bbb; border-radius: 8px; padding: 10px 24px; font-size: 14px; cursor: pointer; font-family: inherit; }
+  .retry-btn:hover { background: #f5f4f0; }
+  .debate-box { background: #fff; border: 0.5px solid #ddd; border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; }
+  .debate-box h2 { font-size: 16px; font-weight: 500; margin-bottom: 1rem; }
+  .debate-q { background: #f0f7ff; border-left: 3px solid #2563eb; border-radius: 0 8px 8px 0; padding: 12px 16px; font-size: 14px; line-height: 1.6; margin-bottom: 0.75rem; color: #1e3a5f; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Les Sept Boules de Cristal</h1>
+  <p class="subtitle">Quiz — Semaines 7 à 11</p>
+  <div id="app"></div>
+</div>
+<script>
+const questions = [
+  {
+    cat: "vocab",
+    q: "Qu'est-ce qu'une expédition ?",
+    opts: [
+      "Un grand voyage scientifique ou d'exploration organisé",
+      "Une histoire inventée sur des explorateurs",
+      "Un musée spécialisé dans les civilisations anciennes",
+      "Un bateau utilisé pour traverser l'Amazonie"
+    ],
+    correct: 0,
+    feedback: "Une expédition est un voyage organisé avec un objectif précis — comme celle de Sanders-Hardiman au Pérou."
+  },
+  {
+    cat: "vocab",
+    q: "Quelle est la différence entre un explorateur et un archéologue ?",
+    opts: [
+      "Il n'y a aucune différence — ce sont des synonymes",
+      "L'explorateur découvre des régions inconnues ; l'archéologue étudie les civilisations anciennes en fouillant le sol",
+      "L'archéologue voyage dans des régions dangereuses ; l'explorateur travaille en laboratoire",
+      "L'explorateur est fictif ; l'archéologue est un vrai métier"
+    ],
+    correct: 1,
+    feedback: "L'explorateur part à la découverte de territoires ; l'archéologue analyse ce que les civilisations ont laissé derrière elles."
+  },
+  {
+    cat: "vocab",
+    q: "Qu'est-ce qu'une malédiction ?",
+    opts: [
+      "Une maladie provoquée par un manque de vitamines",
+      "Un mauvais sort mystérieux censé frapper ceux qui dérangent quelque chose de sacré",
+      "Un document officiel qui interdit d'entrer dans un lieu",
+      "Une technique de fouille archéologique"
+    ],
+    correct: 1,
+    feedback: "Dans le livre, la malédiction de Rascar Capac frappe les scientifiques qui ont rapporté la momie inca en Europe."
+  },
+  {
+    cat: "vocab",
+    q: "Qu'est-ce que des vestiges ?",
+    opts: [
+      "Des restes d'objets ou de bâtiments anciens",
+      "Des dessins gravés sur les murs des temples incas",
+      "Des documents écrits par les explorateurs après leur expédition",
+      "Des objets volés pendant une expédition scientifique"
+    ],
+    correct: 0,
+    feedback: "Les vestiges sont ce qui reste d'une civilisation — objets, bâtiments, outils."
+  },
+  {
+    cat: "vocab",
+    q: "Les boules de cristal sont-elles des vestiges ?",
+    opts: [
+      "Non, ce sont des objets magiques sans valeur historique",
+      "Non, elles ont été fabriquées par les Européens",
+      "Oui, on peut les considérer comme des vestiges sacrés d'une civilisation inca",
+      "On ne sait pas — le livre ne donne aucune information sur leur origine"
+    ],
+    correct: 2,
+    feedback: "Les boules viennent du monde inca et ont une valeur sacrée — ce sont bien des vestiges d'une civilisation."
+  },
+  {
+    cat: "vocab",
+    q: "Quelle est la différence entre sacré et surnaturel ?",
+    opts: [
+      "Sacré veut dire très précieux financièrement ; surnaturel veut dire invisible",
+      "Sacré concerne ce qui est important dans une religion ou croyance ; surnaturel désigne ce qui semble impossible à expliquer scientifiquement",
+      "Ce sont des synonymes exacts dans le contexte inca",
+      "Sacré désigne les objets anciens ; surnaturel désigne les personnes qui y croient"
+    ],
+    correct: 1,
+    feedback: "Un objet sacré a une importance spirituelle ou religieuse. Un phénomène surnaturel dépasse les lois de la science."
+  },
+  {
+    cat: "vocab",
+    q: "Qu'est-ce qu'une coïncidence ?",
+    opts: [
+      "Un événement planifié en secret par quelqu'un",
+      "Un événement qui semble lié à un autre par hasard",
+      "Une malédiction légère, moins grave qu'un vrai sort",
+      "Une erreur de traduction entre langues anciennes"
+    ],
+    correct: 1,
+    feedback: "Une coïncidence, c'est quand deux événements semblent liés — mais peut-être par hasard seulement."
+  },
+  {
+    cat: "vocab",
+    q: "Dans le livre, les scientifiques tombent malades les uns après les autres. Est-ce une coïncidence ?",
+    opts: [
+      "Oui, c'est clairement du hasard — les maladies sont fréquentes en expédition",
+      "Tintin pense que oui, mais Haddock est convaincu du contraire",
+      "Tintin en doute — trop d'événements similaires pour être de simples coïncidences",
+      "Oui, Hergé l'explique clairement dans le texte"
+    ],
+    correct: 2,
+    feedback: "Tintin reste prudent mais la répétition des événements le pousse à chercher une explication — coïncidence ou malédiction, c'est toute la tension du livre."
+  },
+  {
+    cat: "compre",
+    q: "Qui est Rascar Capac et pourquoi revient-il ?",
+    opts: [
+      "C'est un archéologue belge qui a volé des objets incas et qui revient les rendre",
+      "C'est la momie d'un grand prêtre inca ramenée en Europe par l'expédition — il revient se venger de ceux qui ont profané son tombeau",
+      "C'est un personnage inventé par Tintin pour expliquer les événements mystérieux",
+      "C'est le chef de l'expédition Sanders-Hardiman, disparu mystérieusement au Pérou"
+    ],
+    correct: 1,
+    feedback: "Rascar Capac est une momie inca sacrée. Son retour symbolise la vengeance de la civilisation inca contre les explorateurs qui ont violé son repos."
+  },
+  {
+    cat: "compre",
+    q: "Quel est le premier scientifique à être frappé, et comment Hergé montre-t-il la scène ?",
+    opts: [
+      "Le professeur Tournesol — dans une scène lumineuse et joyeuse",
+      "Le professeur Bergamotte — dans une scène nocturne, sombre et angoissante, avec une apparition de Rascar Capac",
+      "Le capitaine Haddock — lors d'une tempête en mer",
+      "Un inconnu — la scène n'est pas montrée, seulement racontée"
+    ],
+    correct: 1,
+    feedback: "Hergé utilise l'obscurité, les ombres et l'apparition de la momie pour créer une atmosphère de terreur. Le dessin fait tout le travail."
+  },
+  {
+    cat: "compre",
+    q: "Comment Tintin réagit-il face aux événements mystérieux ?",
+    opts: [
+      "Il croit immédiatement à la malédiction et demande l'aide d'un chaman",
+      "Il refuse de s'impliquer et conseille d'appeler la police",
+      "Il cherche des explications rationnelles et enquête méthodiquement, sans accepter le surnaturel",
+      "Il est paralysé par la peur comme les autres personnages"
+    ],
+    correct: 2,
+    feedback: "Tintin reste rationnel et méthodique — c'est ce qui le distingue des autres personnages qui cèdent à la peur et aux superstitions."
+  },
+  {
+    cat: "compre",
+    q: "Pourquoi Tournesol est-il enlevé et pas un autre personnage ?",
+    opts: [
+      "Parce qu'il est le personnage le plus faible physiquement",
+      "Par hasard — les ravisseurs voulaient Tintin mais ont fait une erreur",
+      "Parce qu'il est scientifique, expert en objets anciens, et donc précieux pour comprendre les boules de cristal et les secrets incas",
+      "Parce qu'il a volé une des boules de cristal pour ses recherches"
+    ],
+    correct: 2,
+    feedback: "Tournesol est une cible précieuse : son expertise scientifique en fait quelqu'un d'utile pour ceux qui cherchent à percer les mystères incas."
+  },
+  {
+    cat: "compre",
+    q: "Deux différences entre la réaction de Tintin et celle de Haddock face au danger ?",
+    opts: [
+      "Tintin est plus âgé et plus expérimenté ; Haddock est jeune et inexpérimenté",
+      "Tintin analyse et agit calmement ; Haddock réagit de façon émotionnelle, s'énerve et exprime sa peur ouvertement",
+      "Tintin fuit le danger ; Haddock l'affronte directement",
+      "Tintin croit au surnaturel ; Haddock cherche toujours une explication logique"
+    ],
+    correct: 1,
+    feedback: "Tintin = tête froide, méthode, action. Haddock = émotions, jurons, peur exprimée. Ce contraste est une des grandes forces comiques et dramatiques de l'album."
+  }
+];
+
+const debateQuestions = [
+  "Les scientifiques de l'expédition Sanders-Hardiman avaient-ils le droit de ramener la momie en Europe ? Donne un argument pour et un argument contre.",
+  "Hergé montre les Incas comme mystérieux et dangereux. Est-ce juste selon toi — ou est-ce un cliché ? Explique.",
+  "Si tu devais expliquer Les Sept Boules de Cristal à quelqu'un qui ne l'a jamais lu, quelle est la question principale que le livre pose — en une seule phrase en français ?"
+];
+
+let current = 0, score = 0;
+let answered = new Array(questions.length).fill(null);
+
+function getMsg(s, t) {
+  const pct = s / t;
+  if (pct === 1) return "Parfait ! Tu maîtrises parfaitement le module. Le débat Rascar Capac ne te fait pas peur.";
+  if (pct >= 0.8) return "Très bien ! Quelques détails à revoir, mais tu as bien suivi le module.";
+  if (pct >= 0.6) return "Pas mal ! Relis les passages sur les personnages et les événements mystérieux.";
+  return "Continue à explorer ! Quelques pages à relire avant le grand débat.";
+}
+
+function render() {
+  const app = document.getElementById('app');
+  if (current >= questions.length) {
+    app.innerHTML = `
+      <div class="results-card">
+        <div style="font-size:14px;color:#666;">Quiz terminé</div>
+        <div class="results-score">${score}/${questions.length}</div>
+        <div class="results-label">bonnes réponses</div>
+        <div class="results-msg">${getMsg(score, questions.length)}</div>
+        <button class="retry-btn" onclick="restart()">Recommencer</button>
+      </div>
+      <div class="debate-box">
+        <h2>Pour aller plus loin — questions de débat</h2>
+        ${debateQuestions.map((q, i) => `<div class="debate-q"><strong>${i + 1}.</strong> ${q}</div>`).join('')}
+      </div>`;
+    return;
+  }
+
+  const q = questions[current];
+  const ans = answered[current];
+  const progress = (current / questions.length) * 100;
+  const tagClass = q.cat === 'vocab' ? 'tag-vocab' : 'tag-compre';
+  const tagLabel = q.cat === 'vocab' ? 'vocabulaire' : 'compréhension';
+
+  const optsHtml = q.opts.map((o, i) => {
+    let cls = 'opt-btn';
+    if (ans !== null) {
+      if (i === q.correct) cls += ' correct';
+      else if (i === ans && ans !== q.correct) cls += ' wrong';
+    }
+    return `<button class="${cls}" onclick="choose(${i})" ${ans !== null ? 'disabled' : ''}>${o}</button>`;
+  }).join('');
+
+  const feedbackHtml = ans !== null
+    ? `<div class="feedback ${ans === q.correct ? 'ok' : 'ko'}">${ans === q.correct ? '✓ ' : '✗ '}${q.feedback}</div>`
+    : '';
+
+  app.innerHTML = `
+    <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress}%"></div></div>
+    <div class="score-row">
+      <span class="score-badge">Question ${current + 1} sur ${questions.length}</span>
+      <span class="score-badge">Score : ${score}</span>
+    </div>
+    <div class="question-card">
+      <div class="tag ${tagClass}">${tagLabel}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="options">${optsHtml}</div>
+      ${feedbackHtml}
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn" onclick="next()" ${ans === null ? 'disabled' : ''}>
+        ${current < questions.length - 1 ? 'Question suivante →' : 'Voir les résultats →'}
+      </button>
+    </div>`;
+}
+
+function choose(i) {
+  if (answered[current] !== null) return;
+  answered[current] = i;
+  if (i === questions[current].correct) score++;
+  render();
+}
+
+function next() {
+  if (current < questions.length) current++;
+  render();
+}
+
+function restart() {
+  current = 0; score = 0;
+  answered = new Array(questions.length).fill(null);
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
